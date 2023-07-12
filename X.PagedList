@@ -1,0 +1,65 @@
+This post is about how to implement paging in ASP.NET Core MVC applications. For the implementation I am using a nuget package - X.PagedList.Mvc.Core. In the controller action method we need to set the page as the argument like this.
+===========================================================
+public IActionResult Index(int? page = 1)
+{
+    if (page != null && page < 1)
+    {
+        page = 1;
+    }
+
+    var pageSize = 10;
+
+    var shortLinks = _tinyLinksDatabaseContext.ShortLinks
+        .OrderByDescending(s => s.CreatedAt)
+        .ToPagedList(page ?? 1, pageSize);
+
+    return View(shortLinks);
+}
+=========================================================================
+And in the Index view, we can configure the table and pager component. I am using Razor For loop and HTML table to build the table grid structure.
+
+@model IPagedList<ShortLink>
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+@if (Model != null && Model.Count > 1)
+{
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th scope="col">Url</th>
+                    <th scope="col">ShortUrl</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var shortLink in Model)
+                {
+                    <tr>
+                        <td scope="col">@shortLink.Url</td>
+                        <td scope="col">@shortLink.ShortUrl</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+==================================================================================
+And implement the Pager component like this. Since I am using Bootstrap library, I am using Bootstrap pager styles.
+
+<nav>
+
+@Html.PagedListPager(Model, page => Url.Action("index", new { page = page }), new PagedListRenderOptions()
+{
+    ActiveLiElementClass = "active",
+    PageClasses = new[]{ "page-link"},
+    LiElementClasses=new[] { "page-item" },
+    UlElementClasses = new[] { "pagination","justify-content-center", "mt-3" },
+    LinkToNextPageFormat = "Next",
+    LinkToPreviousPageFormat = "Previous",
+    MaximumPageNumbersToDisplay = 5,
+    DisplayLinkToPreviousPage = PagedListDisplayMode.Always,
+    DisplayLinkToNextPage = PagedListDisplayMode.Always
+})
+</nav>
